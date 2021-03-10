@@ -1,0 +1,78 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: bitwarden-backup
+  # namespace: bitwarden
+  labels:
+    app.kubernetes.io/name: bitwarden-backup
+spec:
+  schedule: "0 3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            linkerd.io/inject: disabled
+        spec:
+          containers:
+          - name: bitwarden-backup
+            image: n0cloud/bitwardenrs-pg-backup:latest
+            imagePullPolicy: Always
+            env:
+            - name: DATA_DIR
+              value: /data
+            # - name: DATA_ATTACHMENTS
+            #   value: path_here
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: bitwarden-database-secret
+                  key: url
+            - name: ZIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bitwarden-backup-config
+                  key: zip_password
+            - name: RCLONE_REMOTE_NAME
+              value: bitwardenbackup
+            - name: RCLONE_REMOTE_DIR
+              value: backuprs_storage
+            - name: ZIP_TYPE
+              value: 7z
+            - name: BACKUP_KEEP_DAYS
+              value: "31"
+            - name: BACKUP_FILE_DATE_SUFFIX
+              value: ""
+            # rclone config
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_TYPE
+              value: "google cloud storage"
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_OBJECT_ACL
+              value: "private"
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_BUCKET_ACL
+              value: "private"
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_LOCATION
+              value: "us-east1"
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_PROJECT_NUMBER
+              valueFrom:
+                secretKeyRef:
+                  name: bitwarden-backup-config
+                  key: project_number
+            - name: RCLONE_CONFIG_BITWARDENBACKUP_SERVICE_ACCOUNT_CREDENTIALS
+              valueFrom:
+                secretKeyRef:
+                  name: bitwarden-backup-config
+                  key: service_account.json
+            # securityContext:
+            #   runAsNonRoot: true
+            #   runAsUser: 1001
+            #   runAsGroup: 1001
+            volumeMounts:
+            - mountPath: /data
+              name: data-storage
+              readOnly: true
+          volumes:
+          - name: data-storage
+            persistentVolumeClaim:
+              claimName: bitwarden-data
+          restartPolicy: OnFailure
