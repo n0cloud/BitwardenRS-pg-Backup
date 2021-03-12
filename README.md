@@ -15,6 +15,6 @@ kubectl create secret generic bitwarden-backup-config --from-literal=zip_passwor
 kubectl apply -f k8s/cron-job.yml
 ```
 ### Docker
-Use [this docker image](https://hub.docker.com/repository/docker/n0cloud/bitwardenrs-pg-backup)
+Use [this docker image](https://hub.docker.com/r/n0cloud/bitwardenrs-pg-backup)
 ## Credits
 This project is based on https://github.com/ttionya/BitwardenRS-Backup
