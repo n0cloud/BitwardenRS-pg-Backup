@@ -1,4 +1,4 @@
-FROM rclone/rclone:1.54
+FROM rclone/rclone:1.57
 
 COPY scripts/*.sh /app/
 
